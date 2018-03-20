@@ -1,0 +1,69 @@
+---
+title: "mysql_R"
+author: "Aravind"
+date: "March 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Database Connection
+```{r, warning=FALSE}
+require(RMySQL)
+require(dbConnect)
+
+con = dbConnect(MySQL(), user='root', password='aravindmysql', dbname='rdb', host='localhost')
+dbListTables(con)
+```
+
+#Import sal_exp from MySQL to R
+```{r}
+query <- "select * from sal_exp;"
+
+sal_exp_df <- dbGetQuery(con, query)
+str(sal_exp_df)
+```
+
+# Visualization
+```{r}
+plot(sal_exp_df$experience, sal_exp_df$salary)
+abline(lm(sal_exp_df$salary~sal_exp_df$experience))
+```
+
+# Linear Regression
+
+```{r}
+model <- lm(salary~experience, data = sal_exp_df)
+summary(model)
+```
+
+# PredictionS
+```{r}
+prediction <- predict(model, data.frame(experience = 10))
+print(prediction)
+```
+
+# Add rows in R and export modified table to mysql
+```{r}
+new_val <- data.frame(salary = 76000, experience = 9)
+sal_exp_df <- rbind(sal_exp_df, new_val)
+```
+
+
+
+```{r}
+dbWriteTable(con, "sal_exp", sal_exp_df, overwrite=T, append=F)
+```
+
+# MySQL Queries in R
+```{r}
+exp1<- 3
+exp2 <- 6
+myquery <- paste("select * from sal_exp where experience between ",exp1," and ",exp2,";",sep = "")
+exp_range <- dbGetQuery(con, myquery)
+str(exp_range)
+exp_range$row_names = NULL
+```
+
